@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Library</title>
+	<link rel="stylesheet" href="style.css">
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link
+		href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&display=swap"
+		rel="stylesheet">
+	<link rel="shortcut icon" href="favicon.png">
+	<script src="script.js" defer></script>
+</head>
+
+<body>
+	<header>
+		<div class="container">
+			<h1>library</h1>
+			<nav>
+				<div class="lds-dual-ring active" id="loadingRing"></div>
+				<div class="logged-out" id="loggedOut">
+					<button class="btn" id="logInBtn">Log In</button>
+				</div>
+				<div class="logged-in" id="loggedIn">
+					<button class="btn" id="accountBtn">Account</button>
+					<button class="btn" id="logOutBtn">Log out</button>
+				</div>
+			</nav>
+		</div>
+	</header>
+	<main class="main container">
+		<button class="btn btn-add" id="addBookBtn">+ Add book</button>
+		<div class="books-grid" id="booksGrid"></div>
+	</main>
+	<footer class="footer">
+		<p>
+			Copyright @
+			<script>
+				document.write(new Date().getFullYear());
+			</script>
+			akuma
+		</p>
+	</footer>
+	<div class="modal" id="addBookModal">
+		<form class="add-book-form" id="addBookForm">
+			<h3>Add new book</h3>
+			<input type="text" class="input" id="title" placeholder="Title" required maxlength="100">
+			<p class="error-mssg" id="errorMssg"></p>
+			<input type="text" class="input" id="author" placeholder="Author" required maxlength="100">
+			<input type="number" class="input" id="pages" placeholder="Pages" required max="10000">
+			<div class="is-read">
+				<label for="is-read">Have you read it?</label>
+				<input type="checkbox" class="checkbox" id="isRead">
+			</div>
+			<button class="btn btn-light-green" type="submit">Submit</button>
+
+		</form>
+	</div>
+	<div class="modal" id="accountModal"></div>
+	<div class="overlay" id="overlay"></div>
+
+	<script type="module">
+		// Import the functions you need from the SDKs you need
+		import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
+		import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-analytics.js";
+		// TODO: Add SDKs for Firebase products that you want to use
+		// https://firebase.google.com/docs/web/setup#available-libraries
+
+		// Your web app's Firebase configuration
+		// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+		const firebaseConfig = {
+			apiKey: "AIzaSyAzHkfPW1NXawkc-drBLnbRjFNlb-wGKGM",
+			authDomain: "library-e750c.firebaseapp.com",
+			projectId: "library-e750c",
+			storageBucket: "library-e750c.firebasestorage.app",
+			messagingSenderId: "818313699794",
+			appId: "1:818313699794:web:374c36d9713a682732e80b",
+			measurementId: "G-LGJ6TGTEFH"
+		};
+
+		// Initialize Firebase
+		const app = initializeApp(firebaseConfig);
+		const analytics = getAnalytics(app);
+	</script>
+
+
+</body>
+
+</html>
