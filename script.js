@@ -56,3 +56,267 @@ const setupNavBar = (user) => {
 	loadingRing.classList.remove('active')
 }
 
+const setupAccountModal = (user) => {
+	if (user) {
+		accountModal.innerHTML = `
+			<p>Logged in as</p>
+			<p><strong>${user.email.split('@')[0]}</strong></p>`
+	} else {
+		accountModal.innerHTML = ''
+	}
+}
+
+const openAddBookModal = () => {
+	addBookForm.reset()
+	addBookModal.classList.add('active')
+	overlay.classList.add('active')
+}
+
+const closeAddBookModal = () => {
+	addBookModal.classList.remove('active')
+	overlay.classList.remove('active')
+	errorMssg.classList.remove('active')
+	errorMssg.textContent = ''
+}
+
+const openAccountModal = () => {
+	accountModal.classList.add('active')
+	overlay.classList.add('active')
+}
+
+const closeAccountModal = () => {
+	accountModal.classList.remove('active')
+	overlay.classList.remove('active')
+}
+
+const closeAllModals = () => {
+	closeAddBookModal()
+	closeAccountModal()
+}
+
+const handleKeyboardInput = (e) => {
+	if (e.key == 'Escape') closeAllModals()
+}
+
+const updateBooksGrid = () => {
+	resetBooksGrid()
+	for (let book of library.books) {
+		createBookCard(book)
+	}
+}
+
+const resetBooksGrid = () => {
+	booksGrid.innerHTML = '';
+}
+
+const createBookCard = (book) => {
+	const bookCard = document.createElement('div')
+	const title = document.createElement('p')
+	const author = document.createElement('p')
+	const pages = document.createElement('p')
+	const buttonGroup = document.createElement('div')
+	const readBtn = document.createElement('button')
+	const removeBtn = document.createElement('button')
+
+	bookCard.classList.add('book-card')
+	buttonGroup.classList.add('button-group')
+	readBtn.classList.add('btn')
+	removeBtn.classList.add('btn')
+	readBtn.addEventListener("click", toggleRead)
+	removeBtn.addEventListener("click", removeBook);
+
+	title.textContent = '${book.title}'
+	author.textContent = '${book.author}'
+	pages.textContent = '${book.pages}'
+	removeBtn.textContent = 'Remove'
+
+	if (book.isRead) {
+		readBtn.textContent = 'Read'
+		readBtn.classList.add('btn-light-green')
+	} else {
+		readBtn.textContent = 'Not Read'
+		readBtn.classList.add('btn-light-red')
+	}
+
+	bookCard.appendChild(title)
+	bookCard.appendChild(author)
+	bookCard.appendChild(pages)
+	buttonGroup.appendChild(readBtn)
+	buttonGroup.appendChild(removeBtn)
+	bookCard.appendChild(buttonGroup)
+	booksGrid.appendChild(bookCard)
+}
+
+const getBookFromInput = () => {
+	const title = document.getElementById('title').value
+	const author = document.getElementById('author').value
+	const pages = document.getElementById('pages').value
+	const isRead = document.getElementById('isRead').value
+	return new Book(title, author, pages, isRead)
+}
+
+const addBook = (e) => {
+	e.preventDefault()
+	const newBook = getBookFromInput()
+
+	if (library.isInLibrary(newBook)) {
+		errorMssg.textContent = 'This book already exists in your library'
+		errorMssg.classList.add('active')
+		return
+	}
+
+	if (auth.currentUser) {
+		addBookDB(newBook)
+	} else {
+		library.addBook(newBook)
+		saveLocal()
+		updateBooksGrid()
+	}
+
+	closeAddBookModal()
+}
+
+const removeBook = (e) => {
+	const title = e.target.parentNode.parentNode.firstChild.innerHTML.replaceAll('"', '')
+	if (auth.currentUser) {
+		removeBookDB(title)
+	} else {
+		library.removeBook(title)
+		saveLocal()
+		updateBooksGrid()
+	}
+}
+
+const toggleRead = (e) => {
+	const title = e.target.parentNode.parentNode.firstChild.innerHTML.replaceAll('"', '')
+	const book = library.getBook(title)
+
+	if (auth.currentUser) {
+		toggleBookIsReadDB(book)
+	} else {
+		book.isRead = !book.isRead
+		saveLocal()
+		updateBooksGrid()
+	}
+}
+
+accountBtn.addEventListener('click', openAccountModal)
+addBookBtn.addEventListener('click', openAddBookModal)
+overlay.addEventListener('click', closeAllModals)
+addBookForm.addEventListener('onsubmit', addBook)
+window.addEventListener('onkeydown', handleKeyboardInput)
+
+//Local Storage
+
+const saveLocal = () => {
+	localStorage.setItem('library', JSON.stringify(library.books))
+}
+
+const restoreLocal = () => {
+	const books = JSON.parse(localStorage.getItem('library'))
+	if (books) {
+		library.books = books.map((book) => JSONToBook(book))
+	} else {
+		library.books = []
+	}
+}
+
+//Auth
+
+const auth = firebase.auth()
+const logInBtn = document.getElementById('logInBtn')
+const logOutBtn = document.getElementById('logOutBtn')
+
+auth.onAuthStateChanged(async (user) => {
+	if (user) {
+		setupRealTimeListener()
+	} else {
+		if (unsubscribe) unsubscribe()
+		restoreLocal()
+		updateBooksGrid()
+	}
+	setupAccountModal(user)
+	setupNavBar(user)
+})
+
+const signIn = () => {
+	const provider = new firebase.auth.GoogleAuthProvider()
+	auth.signInWithPopup(provider)
+}
+
+const signOut = () => {
+	auth.signOut()
+}
+
+logInBtn.addEventListener('click', signIn)
+logOutBtn.addEventListener('click', signOut)
+
+// Firestore
+
+const db = firebase.firestore()
+let unsubscribe
+
+const setupRealTimeListener = () => {
+	unsubscribe = db
+		.collection('books')
+		.where('ownerId', '==', auth.currentUser.uid)
+		.orderBy('createdAt')
+		.onSnapshot((snapshot) => {
+			library.books = docsToBooks(snapshot.docs)
+			updateBooksGrid()
+		})
+}
+
+const addBookDB = (newBook) => {
+	db.collection('books').add(bookToDoc(newBook))
+}
+
+const removeBookDB = async (title) => {
+	db.collection('books')
+		.doc(await getBOokIdDB(title))
+		.delete()
+}
+
+const toggleBookIsReadDB = async (book) => {
+	db.collection('books')
+		.doc(await getBookIdDB(book.title))
+		.update({ isRead: !book.isRead })
+}
+
+const getBookIdDB = async (title) => {
+	const snapshot = await db
+		.collection('books')
+		.where('ownerId', '==', auth.currentUser.uid)
+		.where('title', '==', title)
+		.get()
+	const bookId = snapshot.docs.map((doc) => doc.id).join('')
+	return bookId
+}
+
+// Utils
+
+const docsToBooks = (docs) => {
+	return docs.map((doc) => {
+		return new Book(
+			doc.data().title,
+			doc.data().author,
+			doc.data().pages,
+			doc.data().isRead
+		)
+	})
+}
+
+const JSONToBook = (book) => {
+	return new Book(book.title, book.author, book.pages, book.isRead)
+}
+
+const bookToDoc = (book) => {
+	return {
+		ownerId: auth.currentUser.uid,
+		title: book.title,
+		author: book.author,
+		pages: book.pages,
+		isRead: book.isRead,
+		createdAt: firebase.firestore.FieldValue.serverTimestamp()
+	}
+}
