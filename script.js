@@ -125,9 +125,9 @@ const createBookCard = (book) => {
 	readBtn.addEventListener("click", toggleRead)
 	removeBtn.addEventListener("click", removeBook);
 
-	title.textContent = '${book.title}'
-	author.textContent = '${book.author}'
-	pages.textContent = '${book.pages}'
+	title.textContent = `${book.title}`
+	author.textContent = `${book.author}`
+	pages.textContent = `${book.pages}`
 	removeBtn.textContent = 'Remove'
 
 	if (book.isRead) {
@@ -151,7 +151,7 @@ const getBookFromInput = () => {
 	const title = document.getElementById('title').value
 	const author = document.getElementById('author').value
 	const pages = document.getElementById('pages').value
-	const isRead = document.getElementById('isRead').value
+	const isRead = document.getElementById('isRead').checked
 	return new Book(title, author, pages, isRead)
 }
 
@@ -203,8 +203,8 @@ const toggleRead = (e) => {
 accountBtn.addEventListener('click', openAccountModal)
 addBookBtn.addEventListener('click', openAddBookModal)
 overlay.addEventListener('click', closeAllModals)
-addBookForm.addEventListener('onsubmit', addBook)
-window.addEventListener('onkeydown', handleKeyboardInput)
+addBookForm.addEventListener('submit', addBook)
+window.addEventListener('keydown', handleKeyboardInput)
 
 //Local Storage
 
@@ -273,7 +273,7 @@ const addBookDB = (newBook) => {
 
 const removeBookDB = async (title) => {
 	db.collection('books')
-		.doc(await getBOokIdDB(title))
+		.doc(await getBookIdDB(title))
 		.delete()
 }
 
